@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import "../../styles/todolist.css";
-import ImportJson from "../json/importJson";
-import ExportToJson from "../json/exportJson";
+import "./todolist.css";
+import ImportJson from "../json/importJson/importJson";
+import ExportToJson from "../json/exportJson/exportJson";
 
 export interface Task {
   url: string;
@@ -20,6 +20,8 @@ const TodoList: React.FC = () => {
   const [item, setItem] = useState<Task[]>([]);
   const [itemEnCours, setItemEnCours] = useState<Task>({url: "", manga: "", chapitre: "", validated: false});
   const [editEnCours, setEditEnCours] = useState<EditTask>({index: -1, text: "", chapitre: ""});
+  const [noList, setNoList] = useState<boolean>(false);
+  const [sortOrder, setSortOrder] = useState<boolean>(false);
 
   const keyPressInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
@@ -46,14 +48,22 @@ const TodoList: React.FC = () => {
     setEditEnCours({index: key, text: task.url, chapitre: task.chapitre})
   };
 
+  const handleList = () => {
+    setNoList(!noList)
+  };
+
   const deleteElement = (indexTodoToDelete: number) => {
     const newTodos = [...item];
     newTodos.splice(indexTodoToDelete, 1);
     setItem(newTodos);
   };
-
+  
   const sortElement = () => {
-    setItem([...item.reverse()]);
+    const sortedItem = item.sort(function (a, b) {
+      setSortOrder(!sortOrder)
+      return sortOrder ? a.manga.toLowerCase().localeCompare(b.manga.toLowerCase()) : b.manga.toLowerCase().localeCompare(a.manga.toLowerCase());
+    })
+    setItem([...sortedItem]);
   };
 
   const isValidated = (idValidate: number) => {
@@ -65,10 +75,18 @@ const TodoList: React.FC = () => {
   return (
     <div>
       <h2>Manga List</h2>
-      <ImportJson setItem={setItem}/>
+      <div>
+        <label htmlFor="vehicle1">Ta une liste ?</label>
+        <input type="checkbox" onChange={handleList}/>
+        {noList && (
+          <div>
+            <ImportJson setItem={setItem} />
+          </div>
+        )}
+      </div>      
 
       <div className="blockInput">
-        <p>Manga*</p>
+        Manga*
         <input
           type="text"
           autoFocus
@@ -146,13 +164,9 @@ const TodoList: React.FC = () => {
       </ul>
       <ExportToJson list={item}/>
       <div>
-        todo : creer un json via la liste fourni //
-        creer un import de via le json //
-        trier par ordre alpha //
         api pour les noms de manga = autocompletion //
         fonction de recherche //
-        export excel //
-        black white theme //
+        add dragable file //
       </div>
     </div>
   );

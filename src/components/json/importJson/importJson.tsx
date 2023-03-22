@@ -1,5 +1,6 @@
 import { FC } from 'react';
-import { Task } from '../todolist/todolist';
+import { Task } from '../../todolist/todolist';
+import './importJson.css'
 
 type Props = { 
   setItem: (value: any) => void;
@@ -13,17 +14,23 @@ const ImportJSON: FC<Props> = ({ setItem }) => {
     }
     fileReader.onload = (e: any) => {
       let value: any = JSON.parse(e.target.result)
-      setItem((prevState : []) => {
+      setItem((prevState: any) => {
+        if (prevState.length !== 0) {
+          value = value.filter((item: Task) => prevState.some((prevItem: Task) => item.manga !== prevItem.manga))
+        }
         return (
           [...prevState,
-          ...value.filter((item: Task) => prevState.some((prevItem: Task) => item.manga !== prevItem.manga))]
+          ...value]
         )
       })
     };
   };
 
   return (
-    <input type="file" onChange={(e) => handleChange(e)}></input>
+    <>
+      <label draggable="true" htmlFor="file"  className="label-file">Choisi un fichier JSON</label>
+      <input draggable="true" className="input-file" id='file' type="file" onChange={(e) => handleChange(e)}></input>
+    </>
   );
 };
 export default ImportJSON;
