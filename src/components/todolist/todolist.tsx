@@ -1,11 +1,13 @@
-import React, { useState } from "react";
-import "../styles/todolist.css";
+import React, { useEffect, useState } from "react";
+import "../../styles/todolist.css";
+import ImportJson from "../json/importJson";
+import ExportToJson from "../json/exportJson";
 
-interface Task {
+export interface Task {
   url: string;
   manga: string;
   chapitre: string;
-  validated?: boolean;
+  validated: boolean;
 }
 
 interface EditTask {
@@ -16,7 +18,7 @@ interface EditTask {
 
 const TodoList: React.FC = () => {
   const [item, setItem] = useState<Task[]>([]);
-  const [itemEnCours, setItemEnCours] = useState<Task>({url: "", manga: "", chapitre: ""});
+  const [itemEnCours, setItemEnCours] = useState<Task>({url: "", manga: "", chapitre: "", validated: false});
   const [editEnCours, setEditEnCours] = useState<EditTask>({index: -1, text: "", chapitre: ""});
 
   const keyPressInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -30,7 +32,7 @@ const TodoList: React.FC = () => {
       return;
     }
     setItem([...item ,{manga: itemEnCours.manga , url: itemEnCours.url , chapitre: itemEnCours.chapitre, validated: false, }]);
-    setItemEnCours({url: "", manga: "", chapitre: ""})
+    setItemEnCours({url: "", manga: "", chapitre: "", validated: false})
   };
 
   const updateElement = (id: number, edit: any) => {
@@ -63,6 +65,8 @@ const TodoList: React.FC = () => {
   return (
     <div>
       <h2>Manga List</h2>
+      <ImportJson setItem={setItem}/>
+
       <div className="blockInput">
         <p>Manga*</p>
         <input
@@ -140,14 +144,16 @@ const TodoList: React.FC = () => {
           </li>
         ))}
       </ul>
-      todo : creer un json via la liste fourni //
-      creer un import de via le json //
-      trier par ordre alpha //
-      api pour les noms de manga = autocompletion //
-      fonction de recherche //
-      export excel //
-      black white theme //
-
+      <ExportToJson list={item}/>
+      <div>
+        todo : creer un json via la liste fourni //
+        creer un import de via le json //
+        trier par ordre alpha //
+        api pour les noms de manga = autocompletion //
+        fonction de recherche //
+        export excel //
+        black white theme //
+      </div>
     </div>
   );
 };
