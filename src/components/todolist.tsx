@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import "../styles/todolist.css";
 
 interface Task {
@@ -146,6 +146,7 @@ const TodoList: React.FC = () => {
       api pour les noms de manga = autocompletion //
       fonction de recherche //
       export excel //
+      black white theme //
 
     </div>
   );
