@@ -7,12 +7,12 @@ type Props = {
 
 const ImportJSON: FC<Props> = ({ setItem }) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const fileReader = new FileReader();
+    const fileReader: any = new FileReader();
     if (e.target.files !== null) {
       fileReader.readAsText(e.target.files[0], "UTF-8");
     }
-    fileReader.onload = e => {
-      let value: [] = JSON.parse(e.target.result)
+    fileReader.onload = (e: any) => {
+      let value: any = JSON.parse(e.target.result)
       setItem((prevState : []) => {
         return (
           [...prevState,
