@@ -62,6 +62,7 @@ const TodoList: React.FC = () => {
 
   return (
     <div>
+      <h1>Kuba was here</h1>
       <h2>Manga List</h2>
       <div className="blockInput">
         <p>Manga*</p>
