@@ -2,7 +2,7 @@ import { FC } from 'react';
 import { Task } from '../todolist/todolist';
 
 type Props = { 
-  setItem: (value: object) => void;
+  setItem: (value: any) => void;
 };
 
 const ImportJSON: FC<Props> = ({ setItem }) => {

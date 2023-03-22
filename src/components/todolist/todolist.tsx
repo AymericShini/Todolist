@@ -62,10 +62,6 @@ const TodoList: React.FC = () => {
     setItem(validateTodo);
   };
 
-  useEffect(() => {
-    console.log(`item :`, item);
-  }, [item])
-
   return (
     <div>
       <h2>Manga List</h2>
