@@ -2,6 +2,11 @@ import React, { useEffect, useState } from 'react';
 import './todolist.css';
 import ImportJson from '../json/importJson/importJson';
 import ExportToJson from '../json/exportJson/exportJson';
+import SortAlphaDown from '../../../public/img/sortAlphaDown';
+import SortAlphaUp from '../../../public/img/sortAlphaUp';
+import { useDebounce } from '../../shared/hooks/useDebounce';
+
+import { Props as MessageProps, AlertMessage } from '../Alert';
 
 export interface Manga {
   url: string;
@@ -11,14 +16,14 @@ export interface Manga {
 }
 
 interface EditManga {
-  text: string;
+  url: string;
+  manga: string;
   chapitre: string;
   index: number;
 }
 
 const TodoList: React.FC = () => {
   const [item, setItem] = useState<Manga[]>([]);
-  const [searched, setSearched] = useState<Manga[]>([]);
   const [itemEnCours, setItemEnCours] = useState<Manga>({
     url: '',
     manga: '',
@@ -27,12 +32,21 @@ const TodoList: React.FC = () => {
   });
   const [editEnCours, setEditEnCours] = useState<EditManga>({
     index: -1,
-    text: '',
+    manga: '',
+    url: '',
     chapitre: '',
   });
-  const [noList, setNoList] = useState<boolean>(false);
+  const [noList, setNoList] = useState<boolean>(true);
   const [sortOrder, setSortOrder] = useState<boolean>(false);
+  const [searched, setSearched] = useState<Manga[]>([]);
   const [searching, setSearching] = useState<string>('');
+  const [alert, setAlert] = useState<MessageProps>({ type: '', message: '' });
+  // const debouncedAlert = useDebounce(alert, 3500);
+
+  // useEffect(() => {
+  //   setAlert({ type: 'success', message: '' });
+  //   console.log(`ici :`, alert);
+  // }, [alert]);
 
   const keyPressInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -51,31 +65,47 @@ const TodoList: React.FC = () => {
     ) {
       return;
     }
+
+    if(item.length > 0) {
+      item.map((value: any) => {
+        console.log(`value.manga :`, value.manga);
+        if (value.manga === itemEnCours.manga) {
+          setAlert({type: 'warning', message: 'Ce manga existe déjà dans votre liste'})
+          return;
+        }
+      })
+    }
     setItem([
-      ...item,
       {
         manga: itemEnCours.manga,
         url: itemEnCours.url,
         chapitre: itemEnCours.chapitre,
         validated: false,
       },
+      ...item,
     ]);
     setItemEnCours({ url: '', manga: '', chapitre: '', validated: false });
+    
   };
 
   const updateElement = (id: number, edit: any) => {
     const updatedText = [...item];
     updatedText[id] = {
       ...updatedText[id],
-      url: edit.text,
+      url: edit.url,
+      manga: edit.manga,
       chapitre: edit.chapitre,
     };
     setItem(updatedText);
-    setEditEnCours({ index: -1, text: '', chapitre: '' });
+    setEditEnCours({ index: -1, manga: '', chapitre: '', url: '' });
   };
 
-  const startEditElement = (Manga: Manga, key: number) => {
-    setEditEnCours({ index: key, text: Manga.url, chapitre: Manga.chapitre });
+  const startEditElement = (manga: Manga, key: number) => {
+    setEditEnCours({ 
+      index: key, 
+      manga: manga.manga, 
+      chapitre: manga.chapitre, 
+      url: manga.url  });
   };
 
   const handleList = () => {
@@ -105,30 +135,22 @@ const TodoList: React.FC = () => {
   };
 
   const searchingElement = () => {
-    console.log(`seaching :`, searching, item);
-    const searchedItem = item
-      .filter(value => value.manga === searching)
-      .map(answer => console.log(`answer :`, answer));
-    if (searchedItem !== undefined) {
-      setSearched(searchedItem);
-    }
+    const insensitiveSearching = searching.toLowerCase();
+    const searchedItem = item.filter(entry => Object.values(entry).some(value => typeof value === 'string' && value.includes(insensitiveSearching)))
+    setSearched(searchedItem);
   };
 
   const deleteSearch = () => {
     setSearched([]);
   };
 
-  useEffect(() => {
-    console.log(`searched :`, searched);
-  }, [searched]);
-
   return (
     <div>
       <h2>Manga List</h2>
       <div>
-        <label htmlFor="vehicle1">Ta une liste ?</label>
+        <label>Ta une liste ?</label>
         <input type="checkbox" onChange={handleList} />
-        {noList && (
+        {!noList && (
           <div>
             <ImportJson setItem={setItem} />
           </div>
@@ -168,21 +190,28 @@ const TodoList: React.FC = () => {
           onKeyUp={e => keyPressInput(e)}
         />
         <button onClick={() => addElement()}>Ajouter un manga</button>
-        <button onClick={sortElement}>Trier</button>
-        <div>
-          <input
-            type="text"
-            placeholder="Searching"
-            value={searching}
-            onChange={e => setSearching(e.target.value)}
-            onKeyUp={e => keyPressInput(e)}
-          />
-          <button onClick={searchingElement}>Searching</button>
-          <button onClick={deleteSearch}>&#x274C;</button>
-        </div>
+        <button className="sort" onClick={sortElement}>
+          Trier
+          {sortOrder ? <SortAlphaUp /> : <SortAlphaDown />}
+        </button>
       </div>
 
+      <div className="blockInput">
+        <input
+          type="text"
+          placeholder="Searching"
+          value={searching}
+          onChange={e => setSearching(e.target.value)}
+          onKeyUp={e => keyPressInput(e)}
+        />
+        <button onClick={searchingElement}>Searching</button>
+        <button onClick={deleteSearch}>&#x274C;</button>
+      </div>
+
+      {alert.message !== '' && <AlertMessage type={alert.type} message={alert.message} />}
+
       <ul className="listItem">
+
         {searched.length > 0 && (
           <>
             {searched.map((manga, key) => (
@@ -196,9 +225,17 @@ const TodoList: React.FC = () => {
                   <>
                     <input
                       type="text"
-                      value={editEnCours.text}
+                      value={editEnCours.manga}
                       onChange={e =>
-                        setEditEnCours({ ...editEnCours, text: e.target.value })
+                        setEditEnCours({ ...editEnCours, manga: e.target.value })
+                      }
+                      onKeyUp={e => keyPressInput(e)}
+                    />
+                    <input
+                      type="text"
+                      value={editEnCours.url}
+                      onChange={e =>
+                        setEditEnCours({ ...editEnCours, url: e.target.value })
                       }
                       onKeyUp={e => keyPressInput(e)}
                     />
@@ -207,10 +244,7 @@ const TodoList: React.FC = () => {
                       placeholder="Chapitre"
                       value={editEnCours.chapitre}
                       onChange={e =>
-                        setEditEnCours({
-                          ...editEnCours,
-                          chapitre: e.target.value,
-                        })
+                        setEditEnCours({ ...editEnCours, chapitre: e.target.value })
                       }
                       onKeyUp={e => keyPressInput(e)}
                     />
@@ -258,11 +292,19 @@ const TodoList: React.FC = () => {
                   <>
                     <input
                       type="text"
-                      value={editEnCours.text}
+                      placeholder="Manga"
+                      value={editEnCours.manga}
                       onChange={e =>
-                        setEditEnCours({ ...editEnCours, text: e.target.value })
+                        setEditEnCours({ ...editEnCours, manga: e.target.value })
                       }
-                      onKeyUp={e => keyPressInput(e)}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Url"
+                      value={editEnCours.url}
+                      onChange={e =>
+                        setEditEnCours({ ...editEnCours, url: e.target.value })
+                      }
                     />
                     <input
                       type="number"
@@ -274,7 +316,6 @@ const TodoList: React.FC = () => {
                           chapitre: e.target.value,
                         })
                       }
-                      onKeyUp={e => keyPressInput(e)}
                     />
                     <button onClick={() => updateElement(key, editEnCours)}>
                       Valider
@@ -286,7 +327,7 @@ const TodoList: React.FC = () => {
                       {manga.manga} : scan {manga.chapitre}
                     </p>
                     <img
-                      className={'clipBoard'}
+                      className="clipBoard"
                       src="/img/copyToClipBoard.png"
                       onClick={() => {
                         window.open(
@@ -308,6 +349,7 @@ const TodoList: React.FC = () => {
           </>
         )}
       </ul>
+
       <ExportToJson list={item} />
       <div>
         api pour les noms de manga = autocompletion // fonction de recherche //
