@@ -1,17 +1,18 @@
 import React, { FC } from 'react';
-import styles from './alert.css';
+import './alert.css';
+import check from '/img/check.png';
 
 export type Props = {
-    type: 'success' | 'error' | 'warning' | 'info' | '';
-    message: string;
-  };
+  type: 'success' | 'error' | 'warning' | 'info' | '';
+  message: string;
+};
 
-export const AlertMessage: FC<Props> = ({
-  type,
-  message,
-}: Props) => (
+export const AlertMessage: FC<Props> = ({ type, message }: Props) => (
   <div className="alert">
-    <h3>{type.charAt(0).toUpperCase() + type.slice(1)}</h3>
-    {message}
+    <div className={`alert-background ${type}`}>
+      <img className="alert-logo" src={`/img/${type}.png`} />
+      <h4>{type.charAt(0).toUpperCase() + type.slice(1)}</h4>
+      <p className="alert-message">{message}</p>
+    </div>
   </div>
 );
