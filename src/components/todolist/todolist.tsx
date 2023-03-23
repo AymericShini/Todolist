@@ -41,12 +41,11 @@ const TodoList: React.FC = () => {
   const [searched, setSearched] = useState<Manga[]>([]);
   const [searching, setSearching] = useState<string>('');
   const [alert, setAlert] = useState<MessageProps>({ type: '', message: '' });
-  // const debouncedAlert = useDebounce(alert, 3500);
+  const debouncedAlert = useDebounce(alert, 3500);
 
-  // useEffect(() => {
-  //   setAlert({ type: 'success', message: '' });
-  //   console.log(`ici :`, alert);
-  // }, [alert]);
+  useEffect(() => {
+    setAlert({ type: '', message: '' });
+  }, [debouncedAlert]);
 
   const keyPressInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -66,26 +65,26 @@ const TodoList: React.FC = () => {
       return;
     }
 
-    if(item.length > 0) {
-      item.map((value: any) => {
-        console.log(`value.manga :`, value.manga);
-        if (value.manga === itemEnCours.manga) {
-          setAlert({type: 'warning', message: 'Ce manga existe déjà dans votre liste'})
-          return;
-        }
-      })
+    if (item.length > 0) {
+      let duplicate = item.some(e => e.manga === itemEnCours.manga)
+      console.log(`duplicate :`, duplicate);
+      if (duplicate) {
+        setAlert({type: 'warning', message: 'Ce manga existe déjà dans votre liste'})
+        return;
+      }
+    } else {
+      setItem([
+        {
+          manga: itemEnCours.manga,
+          url: itemEnCours.url,
+          chapitre: itemEnCours.chapitre,
+          validated: false,
+        },
+        ...item,
+      ]);
+      setItemEnCours({ url: '', manga: '', chapitre: '', validated: false });
     }
-    setItem([
-      {
-        manga: itemEnCours.manga,
-        url: itemEnCours.url,
-        chapitre: itemEnCours.chapitre,
-        validated: false,
-      },
-      ...item,
-    ]);
-    setItemEnCours({ url: '', manga: '', chapitre: '', validated: false });
-    
+
   };
 
   const updateElement = (id: number, edit: any) => {
