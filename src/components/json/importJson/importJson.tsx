@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { Task } from '../../todolist/todolist';
+import { Manga } from '../../todolist/todolist';
 import './importJson.css'
 
 type Props = { 
@@ -16,7 +16,7 @@ const ImportJSON: FC<Props> = ({ setItem }) => {
       let value: any = JSON.parse(e.target.result)
       setItem((prevState: any) => {
         if (prevState.length !== 0) {
-          value = value.filter((item: Task) => prevState.some((prevItem: Task) => item.manga !== prevItem.manga))
+          value = value.filter((item: Manga) => prevState.some((prevItem: Manga) => item.manga !== prevItem.manga))
         }
         return (
           [...prevState,

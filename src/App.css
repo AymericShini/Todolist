@@ -5,6 +5,10 @@
   text-align: center;
 }
 
+.app {
+  display: flex;
+}
+
 .dark {
   background-color: #333;
   color: #fff;
