@@ -13,6 +13,7 @@
   width: 600px;
   display: flex;
   justify-content: flex-end;
+  align-items: center;
 }
 
 .listItem .listItemElement.validated {
@@ -48,3 +49,7 @@
 .anime-data-suggestions:hover {
   border-color: #5d905f;
 }
+
+/* .hide-list ~ .anime-data-suggestions {
+  display: none;
+} */
