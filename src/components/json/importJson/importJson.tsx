@@ -15,11 +15,9 @@ const ImportJSON: FC<Props> = ({ setItem }) => {
     fileReader.onload = (e: any) => {
       let value: any = JSON.parse(e.target.result);
       value = value.filter((item: any, index: number, self: any) => index === self.findIndex((t: any) => t.save === item.save && t.manga === item.manga));
-      console.log(`value :`, value);
       setItem((prevState: any) => {
         if (prevState.length !== 0) {
           value = value.filter((item: Manga) => prevState.some((prevItem: Manga) => item.manga.toLowerCase() !== prevItem.manga.toLowerCase()));
-          console.log(`value 222 :`, value);
         }
         return [...prevState, ...value];
       });
@@ -28,7 +26,7 @@ const ImportJSON: FC<Props> = ({ setItem }) => {
 
   return (
     <>
-      <label draggable="true" htmlFor="file" className="label-file">
+      <label htmlFor="file" className="label-file">
         Choisi un fichier JSON
       </label>
       <input draggable="true" className="input-file" id="file" type="file" onChange={e => handleChange(e)}></input>

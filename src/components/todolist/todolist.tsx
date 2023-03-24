@@ -44,7 +44,31 @@ const TodoList: React.FC = () => {
   const [searched, setSearched] = useState<Manga[]>([]);
   const [searching, setSearching] = useState<string>('');
   const [alert, setAlert] = useState<MessageProps>({ type: '', message: '' });
+  const [animeData, setAnimeData] = useState([]);
+
+  const [text, setText] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+
   const debouncedAlert = useDebounce(alert, 4000);
+  const debouncedAnimeData = useDebounce(animeData, 4000);
+
+  const getData = async () => {
+    const res = await fetch(`https://api.jikan.moe/v4/manga?q=${itemEnCours.manga}&order_by=popularity&sort=asc&limit=4`).then(res => res.json());
+    const temp = res.data;
+    setAnimeData(temp);
+    // console.log(`res :`, res.data);
+    // const temp = res.data.map((value: any) => value.title);
+    // let temp2 = [...animeData];
+    // temp2.push(temp);
+    // console.log(`temp :`, temp);
+    // setAnimeData(prevState => ({
+    //   toto: [...prevState, temp],
+    // }));
+  };
+
+  useEffect(() => {
+    getData();
+  }, [itemEnCours.manga !== '']);
 
   useEffect(() => {
     setAlert({ type: '', message: '' });
@@ -158,6 +182,26 @@ const TodoList: React.FC = () => {
     setSearched([]);
   };
 
+  // const onChangeHandler = (text: string) => {
+  //   let matches = [];
+  //   setText(text);
+  //   if (text.length > 0) {
+  //     matches = animeData.filter(anime => {
+  //       const regex = new RegExp(`${text}`, 'gi');
+  //       return anime.match(regex);
+  //     });
+  //     console.log(`matches :`, matches);
+  //   }
+  // };
+
+  const handleAddSuggestions = (choosenSuggestions: string) => {
+    setItemEnCours((prevState: any) => ({
+      ...prevState,
+      manga: choosenSuggestions,
+    }));
+    setAnimeData([]);
+  };
+
   return (
     <div>
       <h2>Manga List</h2>
@@ -173,7 +217,17 @@ const TodoList: React.FC = () => {
 
       <div className="blockInput">
         Manga*
-        <input type="text" autoFocus placeholder="Manga" value={itemEnCours.manga} onChange={e => setItemEnCours({ ...itemEnCours, manga: e.target.value })} onKeyUp={e => keyPressInput(e)} />
+        <div>
+          <input type="text" autoFocus placeholder="Manga" value={itemEnCours.manga} onChange={e => setItemEnCours({ ...itemEnCours, manga: e.target.value })} onKeyUp={e => keyPressInput(e)} />
+          {animeData.length > 0 &&
+            animeData.map((animeData: any) => {
+              return (
+                <div onClick={() => handleAddSuggestions(animeData.title)} className="anime-data-suggestions">
+                  {animeData.title}
+                </div>
+              );
+            })}
+        </div>
         Url*
         <input type="url" placeholder="Url scan sans numéro" value={itemEnCours.url} onChange={e => setItemEnCours({ ...itemEnCours, url: e.target.value })} onKeyUp={e => keyPressInput(e)} />
         Chapitre*

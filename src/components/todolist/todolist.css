@@ -37,3 +37,16 @@
   width: 90px;
   align-items: center;
 }
+
+.anime-data-suggestions {
+  width: 149px;
+  justify-content: center;
+  cursor: pointer;
+  border-right: 1px solid black;
+  border-left: 1px solid black;
+  border-bottom: 1px solid black;
+}
+
+.anime-data-suggestions:hover {
+  border-color: #5d905f;
+}
