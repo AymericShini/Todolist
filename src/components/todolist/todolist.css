@@ -3,7 +3,7 @@
   display: flex;
   flex-direction: row;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   gap: 1.2rem;
 }
 
@@ -39,12 +39,10 @@
 }
 
 .anime-data-suggestions {
-  width: 149px;
   justify-content: center;
   cursor: pointer;
-  border-right: 1px solid black;
-  border-left: 1px solid black;
-  border-bottom: 1px solid black;
+  border: 1px solid black;
+  padding: 0.8rem 0;
 }
 
 .anime-data-suggestions:hover {
