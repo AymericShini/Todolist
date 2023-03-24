@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 import './todolist.css';
 import ImportJson from '../json/importJson/importJson';
 import ExportToJson from '../json/exportJson/exportJson';
@@ -8,9 +9,11 @@ import { useDebounce } from '../../shared/hooks/useDebounce';
 
 import { Props as MessageProps, AlertMessage } from '../Alert';
 
-const regexIsEmpty = /^$|\s+/;
+// const regexIsUrlRegex = /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\$/;
+// const regexIsEmpty = /^[^\s]+$/;
 const regexIsNumber = /^[0-9]+$/;
-const regexMangaName = /^[a-zA-Z0-9]+(?:\s[a-zA-Z]+)*$/;
+// const regexMangaName = /^[a-zA-Z0-9]+(?:\s[a-zA-Z]+)*$/;
+
 export interface Manga {
   url: string;
   manga: string;
@@ -27,48 +30,43 @@ interface EditManga {
 
 const TodoList: React.FC = () => {
   const [item, setItem] = useState<Manga[]>([]);
-  const [itemEnCours, setItemEnCours] = useState<Manga>({
-    url: '',
-    manga: '',
-    chapitre: '',
-    validated: false,
-  });
-  const [editEnCours, setEditEnCours] = useState<EditManga>({
-    index: -1,
-    manga: '',
-    url: '',
-    chapitre: '',
-  });
+  const [itemEnCours, setItemEnCours] = useState<Manga>({ url: '', manga: '', chapitre: '', validated: false });
+  const [editEnCours, setEditEnCours] = useState<EditManga>({ index: -1, manga: '', url: '', chapitre: '' });
   const [noList, setNoList] = useState<boolean>(true);
   const [sortOrder, setSortOrder] = useState<boolean>(false);
   const [searched, setSearched] = useState<Manga[]>([]);
   const [searching, setSearching] = useState<string>('');
   const [alert, setAlert] = useState<MessageProps>({ type: '', message: '' });
-  const [animeData, setAnimeData] = useState([]);
-
-  const [text, setText] = useState('');
-  const [suggestions, setSuggestions] = useState([]);
-
+  const [mangaData, setmangaData] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(true);
   const debouncedAlert = useDebounce(alert, 4000);
-  const debouncedAnimeData = useDebounce(animeData, 4000);
-
-  const getData = async () => {
-    const res = await fetch(`https://api.jikan.moe/v4/manga?q=${itemEnCours.manga}&order_by=popularity&sort=asc&limit=4`).then(res => res.json());
-    const temp = res.data;
-    setAnimeData(temp);
-    // console.log(`res :`, res.data);
-    // const temp = res.data.map((value: any) => value.title);
-    // let temp2 = [...animeData];
-    // temp2.push(temp);
-    // console.log(`temp :`, temp);
-    // setAnimeData(prevState => ({
-    //   toto: [...prevState, temp],
-    // }));
-  };
 
   useEffect(() => {
-    getData();
-  }, [itemEnCours.manga !== '']);
+    if (item.length > 0) {
+      sessionStorage.setItem('item', JSON.stringify(item));
+      window.localStorage.setItem('item', JSON.stringify(item));
+    }
+  }, [item]);
+
+  useEffect(() => {
+    if (window.sessionStorage.item) {
+      setItem(JSON.parse(window.sessionStorage.item));
+    } else if (window.localStorage.item) {
+      setItem(JSON.parse(window.localStorage.item));
+    }
+  }, []);
+
+  const getData = (text: string) => {
+    setItemEnCours({ ...itemEnCours, manga: text });
+    if (itemEnCours.manga.length > 3) {
+      const getData = setTimeout(() => {
+        axios.get(`https://api.jikan.moe/v4/manga?q=${text}&order_by=popularity&sort=asc&limit=4`).then(response => {
+          setmangaData(response.data.data);
+        });
+      }, 1500);
+      return () => clearTimeout(getData);
+    }
+  };
 
   useEffect(() => {
     setAlert({ type: '', message: '' });
@@ -90,15 +88,15 @@ const TodoList: React.FC = () => {
   };
 
   const addElement = () => {
-    if (regexIsEmpty.test(itemEnCours.url)) {
-      setAlert({ type: 'error', message: "Ce n'est pas une url" });
-      return;
-    }
-    if (!regexMangaName.test(itemEnCours.manga)) {
-      setAlert({ type: 'error', message: 'Nom de manga non autorisé' });
-      return;
-    }
-    if (!regexIsNumber.test(itemEnCours.chapitre)) {
+    // if (regexIsEmpty.test(itemEnCours.manga.trim())) {
+    //   setAlert({ type: 'error', message: 'Nom de manga non autorisé' });
+    //   return;
+    // }
+    // if (regexIsUrlRegex.test(itemEnCours.url.trim())) {
+    //   setAlert({ type: 'error', message: "Ce n'est pas une url" });
+    //   return;
+    // }
+    if (!regexIsNumber.test(itemEnCours.chapitre.trim())) {
       setAlert({ type: 'error', message: 'Il manque le chapitre' });
       return;
     }
@@ -182,25 +180,30 @@ const TodoList: React.FC = () => {
     setSearched([]);
   };
 
-  // const onChangeHandler = (text: string) => {
-  //   let matches = [];
-  //   setText(text);
-  //   if (text.length > 0) {
-  //     matches = animeData.filter(anime => {
-  //       const regex = new RegExp(`${text}`, 'gi');
-  //       return anime.match(regex);
-  //     });
-  //     console.log(`matches :`, matches);
-  //   }
-  // };
-
   const handleAddSuggestions = (choosenSuggestions: string) => {
     setItemEnCours((prevState: any) => ({
       ...prevState,
       manga: choosenSuggestions,
     }));
-    setAnimeData([]);
+    setmangaData([]);
   };
+
+  const handleRedirectToManga = (manga: any) => {
+    if (manga.url.indexOf('XXX') > -1) {
+      window.open(manga.url.replace('XXX', manga.chapitre), '_blank', 'noopener,noreferrer');
+    } else {
+      window.open(manga.url + manga.chapitre, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const handleUrl = (e: any) => {
+    setItemEnCours({ ...itemEnCours, url: e.target.value });
+    setAlert({ type: 'info', message: "Si votre url contient le numero de chapitre en plein milieu de l'url remplacer le numero par XXX" });
+  };
+
+  // useEffect(() => {
+  //   setAlert({ type: 'info', message: 'Si votre url ' });
+  // }, []);
 
   return (
     <div>
@@ -218,18 +221,19 @@ const TodoList: React.FC = () => {
       <div className="blockInput">
         Manga*
         <div>
-          <input type="text" autoFocus placeholder="Manga" value={itemEnCours.manga} onChange={e => setItemEnCours({ ...itemEnCours, manga: e.target.value })} onKeyUp={e => keyPressInput(e)} />
-          {animeData.length > 0 &&
-            animeData.map((animeData: any) => {
+          <input type="text" autoFocus placeholder="Manga" value={itemEnCours.manga} onChange={e => getData(e.target.value)} />
+          {mangaData.length > 0 &&
+            showSuggestions &&
+            mangaData.map((mangaData: any) => {
               return (
-                <div onClick={() => handleAddSuggestions(animeData.title)} className="anime-data-suggestions">
-                  {animeData.title}
+                <div onClick={() => handleAddSuggestions(mangaData.title)} className="anime-data-suggestions" onFocus={() => setShowSuggestions(true)} onBlur={() => setShowSuggestions(false)}>
+                  {mangaData.title}
                 </div>
               );
             })}
         </div>
         Url*
-        <input type="url" placeholder="Url scan sans numéro" value={itemEnCours.url} onChange={e => setItemEnCours({ ...itemEnCours, url: e.target.value })} onKeyUp={e => keyPressInput(e)} />
+        <input type="url" placeholder="Url scan sans numéro" value={itemEnCours.url} onChange={e => handleUrl(e)} onKeyUp={e => keyPressInput(e)} />
         Chapitre*
         <input type="number" placeholder="Chapitre" value={itemEnCours.chapitre} onChange={e => setItemEnCours({ ...itemEnCours, chapitre: e.target.value })} onKeyUp={e => keyPressInput(e)} />
         <button onClick={() => addElement()}>Ajouter un manga</button>
@@ -285,13 +289,7 @@ const TodoList: React.FC = () => {
                     <p>
                       {manga.manga} : scan {manga.chapitre}
                     </p>
-                    <img
-                      className={'clipBoard'}
-                      src="/img/copyToClipBoard.png"
-                      onClick={() => {
-                        window.open(manga.url + manga.chapitre, '_blank', 'noopener,noreferrer');
-                      }}
-                    />
+                    <img className={'clipBoard'} src="/img/copyToClipBoard.png" onClick={() => handleRedirectToManga(manga)} />
                     <button onClick={() => startEditElement(manga, key)}>Éditer</button>
                     <button onClick={() => deleteElement(key)}>&#x274C;</button>
                     <button onClick={() => isValidated(key)}>&#10003;</button>
@@ -337,13 +335,7 @@ const TodoList: React.FC = () => {
                     <p>
                       {manga.manga} : scan {manga.chapitre}
                     </p>
-                    <img
-                      className="clipBoard"
-                      src="/img/copyToClipBoard.png"
-                      onClick={() => {
-                        window.open(manga.url + manga.chapitre, '_blank', 'noopener,noreferrer');
-                      }}
-                    />
+                    <img onClick={() => handleRedirectToManga(manga)} className="clipBoard" src="/img/copyToClipBoard.png" />
                     <button onClick={() => startEditElement(manga, key)}>Éditer</button>
                     <button onClick={() => deleteElement(key)}>&#x274C;</button>
                     <button onClick={() => isValidated(key)}>&#10003;</button>
