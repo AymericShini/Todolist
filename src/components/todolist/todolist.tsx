@@ -170,10 +170,15 @@ const TodoList: React.FC = () => {
     const insensitiveSearching = searching.toLowerCase();
     const searchedItem = item.filter(entry => Object.values(entry).some(value => typeof value === 'string' && value.toLowerCase().includes(insensitiveSearching)));
     setSearched(searchedItem);
-    setSearching('');
+    // setSearching('');
   };
 
+  useEffect(() => {
+    searchingElement();
+  }, [searching]);
+
   const deleteSearch = () => {
+    setSearching('');
     setSearched([]);
   };
 
@@ -235,9 +240,9 @@ const TodoList: React.FC = () => {
       </div>
 
       <div className="blockInput">
-        <input type="text" placeholder="Searching" value={searching} onChange={e => setSearching(e.target.value)} />
-        <button onClick={searchingElement}>Searching</button>
-        <button onClick={deleteSearch}>&#x274C;</button>
+        <input type="text" placeholder="Search your manga" value={searching} onChange={e => setSearching(e.target.value)} />
+        {/* <button onClick={searchingElement}>Searching</button> */}
+        {searching !== '' && <button onClick={deleteSearch}>&#x274C;</button>}
       </div>
 
       {alert.message !== '' && <AlertMessage type={alert.type} message={alert.message} />}
