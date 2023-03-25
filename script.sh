@@ -1,24 +1,24 @@
-#!/bin/bash
+# #!/bin/bash
 
 
-echo "VERCEL_ENV: $VERCEL_ENV"
+# echo "VERCEL_ENV: $VERCEL_ENV"
 
 
-if [[ "$VERCEL_ENV" == "main" || "$VERCEL_ENV" == "develop" ]] ; then
+# if [[ "$VERCEL_ENV" == "production" || "$VERCEL_ENV" == "develop" ]] ; then
 
-  # Proceed with the build
+#   # Proceed with the build
 
-  echo "✅ - Build can proceed"
+#   echo "✅ - Build can proceed"
 
-  exit 1;
+#   exit 1;
 
 
-else
+# else
 
-  # Don't build
+#   # Don't build
 
-  echo "🛑 - Build cancelled"
+#   echo "🛑 - Build cancelled"
 
-  exit 0;
+#   exit 0;
 
-fi
+# fi

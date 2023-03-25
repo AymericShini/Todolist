@@ -6,12 +6,10 @@ type Props = {
 
 const ExportToJson: FC<Props> = ({ list }) => {
   const exportData = () => {
-    const jsonString = `data:text/json;chatset=utf-8,${encodeURIComponent(
-      JSON.stringify(list)
-    )}`;
-    const link = document.createElement("a");
+    const jsonString = `data:text/json;chatset=utf-8,${encodeURIComponent(JSON.stringify(list))}`;
+    const link = document.createElement('a');
     link.href = jsonString;
-    link.download = "data.json";
+    link.download = 'mangaList.json';
     link.click();
   };
 

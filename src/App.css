@@ -5,6 +5,10 @@
   text-align: center;
 }
 
+.app {
+  display: flex;
+}
+
 .dark {
   background-color: #333;
   color: #fff;
@@ -12,11 +16,6 @@
 .light {
   background-color: #fff;
   color: #333;
-}
-
-input[type=checkbox]{
-  visibility: hidden;
-  
 }
 
 /* The switch - the box around the slider */
