@@ -53,3 +53,12 @@
 /* .hide-list ~ .anime-data-suggestions {
   display: none;
 } */
+
+.favorite {
+  width: 20px;
+}
+
+.sort-display {
+  display: flex;
+  flex-direction: row;
+}
