@@ -18,7 +18,7 @@ export interface Manga {
   url: string;
   manga: string;
   chapitre: string;
-  validated: boolean;
+  favorite: boolean;
 }
 
 interface EditManga {
@@ -30,7 +30,7 @@ interface EditManga {
 
 const TodoList: React.FC = () => {
   const [item, setItem] = useState<Manga[]>([]);
-  const [itemEnCours, setItemEnCours] = useState<Manga>({ url: '', manga: '', chapitre: '', validated: false });
+  const [itemEnCours, setItemEnCours] = useState<Manga>({ url: '', manga: '', chapitre: '', favorite: false });
   const [editEnCours, setEditEnCours] = useState<EditManga>({ index: -1, manga: '', url: '', chapitre: '' });
   const [noList, setNoList] = useState<boolean>(true);
   const [sortOrder, setSortOrder] = useState<boolean>(false);
@@ -39,6 +39,8 @@ const TodoList: React.FC = () => {
   const [alert, setAlert] = useState<MessageProps>({ type: '', message: '' });
   const [mangaData, setmangaData] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(true);
+  const [isFavoriteSelected, setIsFavoriteSelected] = useState(false);
+
   const debouncedAlert = useDebounce(alert, 4000);
 
   useEffect(() => {
@@ -56,6 +58,10 @@ const TodoList: React.FC = () => {
     }
   }, []);
 
+  useEffect(() => {
+    setAlert({ type: '', message: '' });
+  }, [debouncedAlert]);
+
   const getData = (text: string) => {
     setItemEnCours({ ...itemEnCours, manga: text });
     if (itemEnCours.manga.length > 3) {
@@ -67,10 +73,6 @@ const TodoList: React.FC = () => {
       return () => clearTimeout(getData);
     }
   };
-
-  useEffect(() => {
-    setAlert({ type: '', message: '' });
-  }, [debouncedAlert]);
 
   const keyPressInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -111,11 +113,11 @@ const TodoList: React.FC = () => {
           manga: itemEnCours.manga,
           url: itemEnCours.url,
           chapitre: itemEnCours.chapitre,
-          validated: false,
+          favorite: false,
         },
         ...item,
       ]);
-      setItemEnCours({ url: '', manga: '', chapitre: '', validated: false });
+      setItemEnCours({ url: '', manga: '', chapitre: '', favorite: false });
     }
   };
 
@@ -150,29 +152,47 @@ const TodoList: React.FC = () => {
     setItem(newTodos);
   };
 
-  const sortElement = () => {
-    const sortedItem = item.sort(function (item, tempItem) {
-      setSortOrder(!sortOrder);
-      return sortOrder ? item.manga.toLowerCase().localeCompare(tempItem.manga.toLowerCase()) : tempItem.manga.toLowerCase().localeCompare(item.manga.toLowerCase());
-    });
-    setItem([...sortedItem]);
+  const sortElement = (whichSort: string) => {
+    let sortedItem: any = {};
+    if (whichSort === 'alphabetical') {
+      sortedItem = item.sort((item, tempItem) => {
+        setSortOrder(!sortOrder);
+        return sortOrder ? item.manga.toLowerCase().localeCompare(tempItem.manga.toLowerCase()) : tempItem.manga.toLowerCase().localeCompare(item.manga.toLowerCase());
+      });
+      if (isFavoriteSelected) {
+        sortedItem = item.sort((a, b) => (a.favorite < b.favorite ? 1 : -1));
+      }
+      setItem([...sortedItem]);
+    }
+    if (whichSort === 'favorite') {
+      setIsFavoriteSelected(!isFavoriteSelected);
+      if (!isFavoriteSelected) {
+        sortedItem = item.sort((a, b) => (a.favorite < b.favorite ? 1 : -1));
+      } else if (isFavoriteSelected) {
+        sortedItem = item.sort((a, b) => (a.favorite > b.favorite ? 1 : -1));
+      }
+      setItem([...sortedItem]);
+    }
   };
 
-  const isValidated = (idValidate: number) => {
-    const validateTodo = [...item];
-    validateTodo[idValidate].validated = !validateTodo[idValidate].validated;
-    setItem(validateTodo);
+  const isfavorite = (isFavorite: number) => {
+    const favorite = [...item];
+    favorite[isFavorite].favorite = !favorite[isFavorite].favorite;
+    setItem(favorite);
   };
 
   const searchingElement = () => {
     const insensitiveSearching = searching.toLowerCase();
     const searchedItem = item.filter(entry => Object.values(entry).some(value => typeof value === 'string' && value.toLowerCase().includes(insensitiveSearching)));
-    setSearched(searchedItem);
-    // setSearching('');
+    if (searchedItem.length > 0) {
+      setSearched(searchedItem);
+    } else setAlert({ type: 'info', message: 'Aucun manga trouvé dans votre liste' });
   };
 
   useEffect(() => {
-    searchingElement();
+    if (searching.length > 0) {
+      searchingElement();
+    }
   }, [searching]);
 
   const deleteSearch = () => {
@@ -200,10 +220,6 @@ const TodoList: React.FC = () => {
     setItemEnCours({ ...itemEnCours, url: e.target.value });
     setAlert({ type: 'info', message: "Si votre url contient le numero de chapitre en plein milieu de l'url remplacer le numero par XXX" });
   };
-
-  // useEffect(() => {
-  //   setAlert({ type: 'info', message: 'Si votre url ' });
-  // }, []);
 
   return (
     <div>
@@ -237,10 +253,17 @@ const TodoList: React.FC = () => {
         Chapitre*
         <input type="number" placeholder="Chapitre" value={itemEnCours.chapitre} onChange={e => setItemEnCours({ ...itemEnCours, chapitre: e.target.value })} onKeyUp={e => keyPressInput(e)} />
         <button onClick={() => addElement()}>Ajouter un manga</button>
-        <button className="sort" onClick={sortElement}>
-          Trier
-          {sortOrder ? <SortAlphaUp /> : <SortAlphaDown />}
-        </button>
+        <div>
+          Trier :
+          <div className="sort-display">
+            <button className="sort" onClick={() => sortElement('alphabetical')}>
+              {sortOrder ? <SortAlphaUp /> : <SortAlphaDown />}
+            </button>
+            <button className="sort" onClick={() => sortElement('favorite')}>
+              <img className="favorite" src={isFavoriteSelected ? 'img/checkedStar.png' : 'img/unCheckedStar.png'} />
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="blockInput">
@@ -255,7 +278,7 @@ const TodoList: React.FC = () => {
         {searched.length > 0 && (
           <>
             {searched.map((manga, key) => (
-              <li key={key} className={`listItemElement ${manga.validated ? 'validated' : ''}`}>
+              <li key={key} className={`listItemElement ${manga.favorite ? 'favorite' : ''}`}>
                 {key === editEnCours.index ? (
                   <>
                     <input
@@ -292,7 +315,9 @@ const TodoList: React.FC = () => {
                     <img className={'clipBoard'} src="/img/copyToClipBoard.png" onClick={() => handleRedirectToManga(manga)} />
                     <button onClick={() => startEditElement(manga, key)}>Éditer</button>
                     <button onClick={() => deleteElement(key)}>&#x274C;</button>
-                    <button onClick={() => isValidated(key)}>&#10003;</button>
+                    <button onClick={() => isfavorite(key)}>
+                      <img className="favorite" src={manga.favorite ? 'img/checkedStar.png' : 'img/unCheckedStar.png'} />
+                    </button>
                   </>
                 )}
               </li>
@@ -302,7 +327,7 @@ const TodoList: React.FC = () => {
         {searched.length === 0 && (
           <>
             {item.map((manga, key) => (
-              <li key={key} className={`listItemElement ${manga.validated ? 'validated' : ''}`}>
+              <li key={key} className={`listItemElement ${manga.favorite ? 'favorite' : ''}`}>
                 {key === editEnCours.index ? (
                   <>
                     <input
@@ -338,7 +363,9 @@ const TodoList: React.FC = () => {
                     <img onClick={() => handleRedirectToManga(manga)} className="clipBoard" src="/img/copyToClipBoard.png" />
                     <button onClick={() => startEditElement(manga, key)}>Éditer</button>
                     <button onClick={() => deleteElement(key)}>&#x274C;</button>
-                    <button onClick={() => isValidated(key)}>&#10003;</button>
+                    <button onClick={() => isfavorite(key)}>
+                      <img className="favorite" src={manga.favorite ? 'img/checkedStar.png' : 'img/unCheckedStar.png'} />
+                    </button>
                   </>
                 )}
               </li>
