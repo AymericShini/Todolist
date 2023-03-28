@@ -19,6 +19,7 @@ export interface Manga {
   manga: string;
   chapitre: string;
   favorite: boolean;
+  notifications: boolean;
 }
 
 interface EditManga {
@@ -30,7 +31,7 @@ interface EditManga {
 
 const TodoList: React.FC = () => {
   const [item, setItem] = useState<Manga[]>([]);
-  const [itemEnCours, setItemEnCours] = useState<Manga>({ url: '', manga: '', chapitre: '', favorite: false });
+  const [itemEnCours, setItemEnCours] = useState<Manga>({ url: '', manga: '', chapitre: '', favorite: false, notifications: false });
   const [editEnCours, setEditEnCours] = useState<EditManga>({ index: -1, manga: '', url: '', chapitre: '' });
   const [noList, setNoList] = useState<boolean>(true);
   const [sortOrder, setSortOrder] = useState<boolean>(false);
@@ -63,15 +64,15 @@ const TodoList: React.FC = () => {
   }, [debouncedAlert]);
 
   const getData = (text: string) => {
-    setItemEnCours({ ...itemEnCours, manga: text });
-    if (itemEnCours.manga.length > 3) {
-      const getData = setTimeout(() => {
-        axios.get(`https://api.jikan.moe/v4/manga?q=${text}&order_by=popularity&sort=asc&limit=4`).then(response => {
-          setmangaData(response.data.data);
-        });
-      }, 1500);
-      return () => clearTimeout(getData);
-    }
+    // setItemEnCours({ ...itemEnCours, manga: text });
+    // if (itemEnCours.manga.length > 2) {
+    //   const getData = setTimeout(() => {
+    //     axios.get(`https://api.jikan.moe/v4/manga?q=${text}&order_by=popularity&sort=asc&limit=5`).then(response => {
+    //       setmangaData(response.data.data);
+    //     });
+    //   }, 1500);
+    //   return () => clearTimeout(getData);
+    // }
   };
 
   const keyPressInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -114,10 +115,11 @@ const TodoList: React.FC = () => {
           url: itemEnCours.url,
           chapitre: itemEnCours.chapitre,
           favorite: false,
+          notifications: false,
         },
         ...item,
       ]);
-      setItemEnCours({ url: '', manga: '', chapitre: '', favorite: false });
+      setItemEnCours({ url: '', manga: '', chapitre: '', favorite: false, notifications: false });
     }
   };
 
@@ -181,6 +183,12 @@ const TodoList: React.FC = () => {
     setItem(favorite);
   };
 
+  const isNotifOn = (isNotifOn: number) => {
+    const notifications = [...item];
+    notifications[isNotifOn].notifications = !notifications[isNotifOn].notifications;
+    setItem(notifications);
+  };
+
   const searchingElement = () => {
     const insensitiveSearching = searching.toLowerCase();
     const searchedItem = item.filter(entry => Object.values(entry).some(value => typeof value === 'string' && value.toLowerCase().includes(insensitiveSearching)));
@@ -193,7 +201,7 @@ const TodoList: React.FC = () => {
     if (searching.length > 0) {
       searchingElement();
     }
-  }, [searching]);
+  }, [searching, item]);
 
   const deleteSearch = () => {
     setSearching('');
@@ -210,9 +218,9 @@ const TodoList: React.FC = () => {
 
   const handleRedirectToManga = (manga: any) => {
     if (manga.url.indexOf('XXX') > -1) {
-      window.open(manga.url.replace('XXX', manga.chapitre), '_blank', 'noopener,noreferrer');
+      window.open(manga.url.replace('XXX', manga.chapitre), '_blank');
     } else {
-      window.open(manga.url + manga.chapitre, '_blank', 'noopener,noreferrer');
+      window.open(manga.url + manga.chapitre, '_blank');
     }
   };
 
@@ -312,7 +320,7 @@ const TodoList: React.FC = () => {
                     <p>
                       {manga.manga} : scan {manga.chapitre}
                     </p>
-                    <img className={'clipBoard'} src="/img/copyToClipBoard.png" onClick={() => handleRedirectToManga(manga)} />
+                    <img onClick={() => handleRedirectToManga(manga)} className={'clipBoard'} src="/img/copyToClipBoard.png" />
                     <button onClick={() => startEditElement(manga, key)}>Éditer</button>
                     <button onClick={() => deleteElement(key)}>&#x274C;</button>
                     <button onClick={() => isfavorite(key)}>
@@ -365,6 +373,9 @@ const TodoList: React.FC = () => {
                     <button onClick={() => deleteElement(key)}>&#x274C;</button>
                     <button onClick={() => isfavorite(key)}>
                       <img className="favorite" src={manga.favorite ? 'img/checkedStar.png' : 'img/unCheckedStar.png'} />
+                    </button>
+                    <button onClick={() => isNotifOn(key)}>
+                      <img className="favorite" src={manga.notifications ? 'img/notifOn.png' : 'img/notifOff.png'} />
                     </button>
                   </>
                 )}
