@@ -8,6 +8,7 @@ import SortAlphaUp from '../../../public/img/sortAlphaUp';
 import { useDebounce } from '../../shared/hooks/useDebounce';
 
 import { Props as MessageProps, AlertMessage } from '../Alert';
+import Statistics from '../Stats';
 
 // const regexIsUrlRegex = /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\$/;
 // const regexIsEmpty = /^[^\s]+$/;
@@ -20,6 +21,9 @@ export interface Manga {
   chapitre: string;
   favorite: boolean;
   notifications: boolean;
+  startDate?: string;
+  updatedMangaDate?: string;
+  updatedChapterDate?: string;
 }
 
 interface EditManga {
@@ -31,7 +35,16 @@ interface EditManga {
 
 const TodoList: React.FC = () => {
   const [item, setItem] = useState<Manga[]>([]);
-  const [itemEnCours, setItemEnCours] = useState<Manga>({ url: '', manga: '', chapitre: '', favorite: false, notifications: false });
+  const [itemEnCours, setItemEnCours] = useState<Manga>({
+    url: '',
+    manga: '',
+    chapitre: '',
+    favorite: false,
+    notifications: false,
+    startDate: new Date().toLocaleString(),
+    updatedMangaDate: new Date().toLocaleString(),
+    updatedChapterDate: new Date().toLocaleString(),
+  });
   const [editEnCours, setEditEnCours] = useState<EditManga>({ index: -1, manga: '', url: '', chapitre: '' });
   const [noList, setNoList] = useState<boolean>(true);
   const [sortOrder, setSortOrder] = useState<boolean>(false);
@@ -40,6 +53,12 @@ const TodoList: React.FC = () => {
   const [alert, setAlert] = useState<MessageProps>({ type: '', message: '' });
   const [mangaData, setmangaData] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(true);
+  const [sort, setSort] = useState<{ favorite: boolean; chapter: boolean; alphabetical: boolean; updated: boolean }>({
+    favorite: false,
+    chapter: false,
+    alphabetical: false,
+    updated: false,
+  });
   const [isFavoriteSelected, setIsFavoriteSelected] = useState(false);
 
   const debouncedAlert = useDebounce(alert, 4000);
@@ -64,7 +83,7 @@ const TodoList: React.FC = () => {
   }, [debouncedAlert]);
 
   const getData = (text: string) => {
-    // setItemEnCours({ ...itemEnCours, manga: text });
+    setItemEnCours({ ...itemEnCours, manga: text });
     // if (itemEnCours.manga.length > 2) {
     //   const getData = setTimeout(() => {
     //     axios.get(`https://api.jikan.moe/v4/manga?q=${text}&order_by=popularity&sort=asc&limit=5`).then(response => {
@@ -116,6 +135,9 @@ const TodoList: React.FC = () => {
           chapitre: itemEnCours.chapitre,
           favorite: false,
           notifications: false,
+          startDate: new Date().toLocaleString(),
+          updatedMangaDate: new Date().toLocaleString(),
+          updatedChapterDate: new Date().toLocaleString(),
         },
         ...item,
       ]);
@@ -125,11 +147,21 @@ const TodoList: React.FC = () => {
 
   const updateElement = (id: number, edit: any) => {
     const updatedText = [...item];
+
+    if (edit.chapitre !== item[id].chapitre) {
+      const updateChapterDate = new Date().toLocaleString();
+      updatedText[id] = {
+        ...updatedText[id],
+        updatedChapterDate: updateChapterDate,
+      };
+    }
+
     updatedText[id] = {
       ...updatedText[id],
       url: edit.url,
       manga: edit.manga,
       chapitre: edit.chapitre,
+      updatedMangaDate: new Date().toLocaleString(),
     };
     setItem(updatedText);
     setEditEnCours({ index: -1, manga: '', chapitre: '', url: '' });
@@ -156,25 +188,61 @@ const TodoList: React.FC = () => {
 
   const sortElement = (whichSort: string) => {
     let sortedItem: any = {};
+    let sortDirection = false;
     if (whichSort === 'alphabetical') {
       sortedItem = item.sort((item, tempItem) => {
-        setSortOrder(!sortOrder);
-        return sortOrder ? item.manga.toLowerCase().localeCompare(tempItem.manga.toLowerCase()) : tempItem.manga.toLowerCase().localeCompare(item.manga.toLowerCase());
+        sortDirection = !sort.alphabetical;
+        setSort((prevState: any) => ({
+          ...prevState,
+          alphabetical: sortDirection,
+        }));
+        return sort.alphabetical ? item.manga.toLowerCase().localeCompare(tempItem.manga.toLowerCase()) : tempItem.manga.toLowerCase().localeCompare(item.manga.toLowerCase());
       });
       if (isFavoriteSelected) {
         sortedItem = item.sort((a, b) => (a.favorite < b.favorite ? 1 : -1));
       }
-      setItem([...sortedItem]);
     }
+
     if (whichSort === 'favorite') {
-      setIsFavoriteSelected(!isFavoriteSelected);
-      if (!isFavoriteSelected) {
+      sortDirection = !sort.favorite;
+      setSort((prevState: any) => ({
+        ...prevState,
+        favorite: sortDirection,
+      }));
+      if (!sort.favorite) {
         sortedItem = item.sort((a, b) => (a.favorite < b.favorite ? 1 : -1));
-      } else if (isFavoriteSelected) {
+      } else if (sort.favorite) {
         sortedItem = item.sort((a, b) => (a.favorite > b.favorite ? 1 : -1));
       }
-      setItem([...sortedItem]);
     }
+
+    if (whichSort === 'chapter') {
+      sortDirection = !sort.chapter;
+      setSort((prevState: any) => ({
+        ...prevState,
+        chapter: sortDirection,
+      }));
+      if (!sort.chapter) {
+        sortedItem = item.sort((a, b) => (a.updatedChapterDate < b.updatedChapterDate ? 1 : -1));
+      } else if (sort.chapter) {
+        sortedItem = item.sort((a, b) => (a.updatedChapterDate > b.updatedChapterDate ? 1 : -1));
+      }
+    }
+
+    if (whichSort === 'updated') {
+      sortDirection = !sort.updated;
+      setSort((prevState: any) => ({
+        ...prevState,
+        updated: sortDirection,
+      }));
+      if (!sort.updated) {
+        sortedItem = item.sort((a, b) => (a.updatedMangaDate < b.updatedMangaDate ? 1 : -1));
+      } else if (sort.updated) {
+        sortedItem = item.sort((a, b) => (a.updatedMangaDate > b.updatedMangaDate ? 1 : -1));
+      }
+    }
+
+    setItem([...sortedItem]);
   };
 
   const isfavorite = (isFavorite: number) => {
@@ -217,11 +285,16 @@ const TodoList: React.FC = () => {
   };
 
   const handleRedirectToManga = (manga: any) => {
+    var a = document.createElement('a');
     if (manga.url.indexOf('XXX') > -1) {
-      window.open(manga.url.replace('XXX', manga.chapitre), '_blank');
+      a.href = manga.url.replace('XXX', manga.chapitre);
+      // window.open(manga.url.replace('XXX', manga.chapitre), '_blank');
     } else {
-      window.open(manga.url + manga.chapitre, '_blank');
+      a.href = manga.url + manga.chapitre;
     }
+    var evt = document.createEvent('MouseEvents'); //the tenth parameter of initMouseEvent sets ctrl key
+    evt.initMouseEvent('click', true, true, window, 0, 0, 0, 0, 0, true, false, false, false, 0, null);
+    a.dispatchEvent(evt);
   };
 
   const handleUrl = (e: any) => {
@@ -269,6 +342,12 @@ const TodoList: React.FC = () => {
             </button>
             <button className="sort" onClick={() => sortElement('favorite')}>
               <img className="favorite" src={isFavoriteSelected ? 'img/checkedStar.png' : 'img/unCheckedStar.png'} />
+            </button>
+            <button className="sort" onClick={() => sortElement('chapter')}>
+              last chapter updated
+            </button>
+            <button className="sort" onClick={() => sortElement('updated')}>
+              last manga updated
             </button>
           </div>
         </div>
@@ -368,7 +447,9 @@ const TodoList: React.FC = () => {
                     <p>
                       {manga.manga} : scan {manga.chapitre}
                     </p>
-                    <img onClick={() => handleRedirectToManga(manga)} className="clipBoard" src="/img/copyToClipBoard.png" />
+                    <a onClick={() => handleRedirectToManga(manga)}>
+                      <img src="/img/copyToClipBoard.png" className="clipBoard" />
+                    </a>
                     <button onClick={() => startEditElement(manga, key)}>Éditer</button>
                     <button onClick={() => deleteElement(key)}>&#x274C;</button>
                     <button onClick={() => isfavorite(key)}>
@@ -386,7 +467,8 @@ const TodoList: React.FC = () => {
       </ul>
 
       <ExportToJson list={item} />
-      <div>api pour les noms de manga = autocompletion // fonction de recherche // add dragable file //</div>
+      <Statistics item={item} />
+      <div>api pour les noms de manga = UX // scraping next mange available // more stats //</div>
     </div>
   );
 };
