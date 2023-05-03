@@ -46,21 +46,41 @@ const TodoList: React.FC = () => {
 
   useEffect(() => {
     if (item.length > 0) {
-      sessionStorage.setItem('item', JSON.stringify(item));
-      window.localStorage.setItem('item', JSON.stringify(item));
+      // Save item to session storage
+      try {
+        sessionStorage.setItem('item', JSON.stringify(item));
+      } catch (error) {
+        console.error(error);
+      }
+      // Save item to local storage
+      try {
+        window.localStorage.setItem('item', JSON.stringify(item));
+      } catch (error) {
+        console.error(error);
+      }
     }
   }, [item]);
 
   useEffect(() => {
-    if (window.sessionStorage.item) {
-      setItem(JSON.parse(window.sessionStorage.item));
-    } else if (window.localStorage.item) {
-      setItem(JSON.parse(window.localStorage.item));
+    try {
+      // Get the item from sessionStorage or localStorage
+      const item = JSON.parse(window.sessionStorage.item || window.localStorage.item);
+      // Set the item in the state
+      setItem(item);
+    } catch (error) {
+      console.error(error);
     }
   }, []);
 
+  // Clear alert after 5000ms
   useEffect(() => {
-    setAlert({ type: '', message: '' });
+    const timer = setTimeout(() => {
+      setAlert({ type: '', message: '' });
+    }, 5000);
+
+    return () => {
+      clearTimeout(timer);
+    };
   }, [debouncedAlert]);
 
   const getData = (text: string) => {
@@ -81,8 +101,11 @@ const TodoList: React.FC = () => {
     }
   };
 
+  // Check if the manga is already in the list
   const isDuplicate = () => {
+    // If the list is not empty
     if (item.length > 0) {
+      // Check if the manga is already in the list
       let duplicate = item.some(e => e.manga.toLowerCase() === itemEnCours.manga.toLowerCase());
       return duplicate;
     } else {
@@ -90,25 +113,23 @@ const TodoList: React.FC = () => {
     }
   };
 
+  // Function to add a manga to the list
   const addElement = () => {
-    // if (regexIsEmpty.test(itemEnCours.manga.trim())) {
-    //   setAlert({ type: 'error', message: 'Nom de manga non autorisé' });
-    //   return;
-    // }
-    // if (regexIsUrlRegex.test(itemEnCours.url.trim())) {
-    //   setAlert({ type: 'error', message: "Ce n'est pas une url" });
-    //   return;
-    // }
+    // Check if the chapter field is empty
     if (!regexIsNumber.test(itemEnCours.chapitre.trim())) {
+      // If so, display an error message
       setAlert({ type: 'error', message: 'Il manque le chapitre' });
       return;
     }
+    // Check if the manga already exists in the list
     if (isDuplicate()) {
+      // If so, display a warning message
       setAlert({
         type: 'warning',
         message: 'Ce manga existe déjà dans ta liste',
       });
     } else {
+      // If not, add the manga to the list
       setItem([
         {
           manga: itemEnCours.manga,
@@ -119,23 +140,31 @@ const TodoList: React.FC = () => {
         },
         ...item,
       ]);
+      // Reset the input fields
       setItemEnCours({ url: '', manga: '', chapitre: '', favorite: false, notifications: false });
     }
   };
 
   const updateElement = (id: number, edit: any) => {
+    // Clone the current items array
     const updatedText = [...item];
+    // Update the item at the given ID
     updatedText[id] = {
+      // Keep the existing data
       ...updatedText[id],
+      // Replace the data with the updated data
       url: edit.url,
       manga: edit.manga,
       chapitre: edit.chapitre,
     };
+    // Update the items array
     setItem(updatedText);
+    // Reset the edit state
     setEditEnCours({ index: -1, manga: '', chapitre: '', url: '' });
   };
 
   const startEditElement = (manga: Manga, key: number) => {
+    // Set the current manga to edit
     setEditEnCours({
       index: key,
       manga: manga.manga,
@@ -155,25 +184,30 @@ const TodoList: React.FC = () => {
   };
 
   const sortElement = (whichSort: string) => {
-    let sortedItem: any = {};
+    // check which sort button is selected
     if (whichSort === 'alphabetical') {
-      sortedItem = item.sort((item, tempItem) => {
-        setSortOrder(!sortOrder);
-        return sortOrder ? item.manga.toLowerCase().localeCompare(tempItem.manga.toLowerCase()) : tempItem.manga.toLowerCase().localeCompare(item.manga.toLowerCase());
-      });
+      // toggle sort order
+      setSortOrder(!sortOrder);
+      // check if favorite is selected
       if (isFavoriteSelected) {
-        sortedItem = item.sort((a, b) => (a.favorite < b.favorite ? 1 : -1));
+        // sort by favorite first
+        setItem([...item.sort((a, b) => (a.favorite < b.favorite ? 1 : -1))]);
+      } else {
+        // sort by alphabet
+        setItem([...item.sort((item, tempItem) => (sortOrder ? item.manga.toLowerCase().localeCompare(tempItem.manga.toLowerCase()) : tempItem.manga.toLowerCase().localeCompare(item.manga.toLowerCase())))]);
       }
-      setItem([...sortedItem]);
     }
+    // check if favorite button is selected
     if (whichSort === 'favorite') {
+      // toggle favorite sort
       setIsFavoriteSelected(!isFavoriteSelected);
       if (!isFavoriteSelected) {
-        sortedItem = item.sort((a, b) => (a.favorite < b.favorite ? 1 : -1));
-      } else if (isFavoriteSelected) {
-        sortedItem = item.sort((a, b) => (a.favorite > b.favorite ? 1 : -1));
+        // sort by favorite first
+        setItem([...item.sort((a, b) => (a.favorite < b.favorite ? 1 : -1))]);
+      } else {
+        // sort by alphabet
+        setItem([...item.sort((a, b) => (a.favorite > b.favorite ? 1 : -1))]);
       }
-      setItem([...sortedItem]);
     }
   };
 
@@ -190,11 +224,16 @@ const TodoList: React.FC = () => {
   };
 
   const searchingElement = () => {
+    // convert the string to lowercase
     const insensitiveSearching = searching.toLowerCase();
+    // filter the item list to return only the elements that contain the search string
     const searchedItem = item.filter(entry => Object.values(entry).some(value => typeof value === 'string' && value.toLowerCase().includes(insensitiveSearching)));
-    if (searchedItem.length > 0) {
-      setSearched(searchedItem);
-    } else setAlert({ type: 'info', message: 'Aucun manga trouvé dans votre liste' });
+    // update the searched state with the filtered list
+    setSearched(searchedItem);
+    if (searchedItem.length === 0) {
+      // if the filtered list is empty, display an info alert
+      setAlert({ type: 'info', message: 'Aucun manga trouvé dans votre liste' });
+    }
   };
 
   useEffect(() => {
@@ -245,8 +284,8 @@ const TodoList: React.FC = () => {
       <div className="blockInput">
         Manga*
         <div>
-          <input type="text" autoFocus placeholder="Manga" value={itemEnCours.manga} onChange={e => getData(e.target.value)} />
-          {mangaData.length > 0 &&
+          <input type="text" autoFocus placeholder="Manga" value={itemEnCours.manga} onChange={e => setItemEnCours({ ...itemEnCours, manga: e.target.value })} onKeyUp={e => keyPressInput(e)} />
+          {/* {mangaData.length > 0 &&
             showSuggestions &&
             mangaData.map((mangaData: any) => {
               return (
@@ -254,7 +293,7 @@ const TodoList: React.FC = () => {
                   {mangaData.title}
                 </div>
               );
-            })}
+            })} */}
         </div>
         Url*
         <input type="url" placeholder="Url scan sans numéro" value={itemEnCours.url} onChange={e => handleUrl(e)} onKeyUp={e => keyPressInput(e)} />
