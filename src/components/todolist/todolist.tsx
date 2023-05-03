@@ -184,30 +184,25 @@ const TodoList: React.FC = () => {
   };
 
   const sortElement = (whichSort: string) => {
-    // check which sort button is selected
+    let sortedItem: any = {};
     if (whichSort === 'alphabetical') {
-      // toggle sort order
-      setSortOrder(!sortOrder);
-      // check if favorite is selected
+      sortedItem = item.sort((item, tempItem) => {
+        setSortOrder(!sortOrder);
+        return sortOrder ? item.manga.toLowerCase().localeCompare(tempItem.manga.toLowerCase()) : tempItem.manga.toLowerCase().localeCompare(item.manga.toLowerCase());
+      });
       if (isFavoriteSelected) {
-        // sort by favorite first
-        setItem([...item.sort((a, b) => (a.favorite < b.favorite ? 1 : -1))]);
-      } else {
-        // sort by alphabet
-        setItem([...item.sort((item, tempItem) => (sortOrder ? item.manga.toLowerCase().localeCompare(tempItem.manga.toLowerCase()) : tempItem.manga.toLowerCase().localeCompare(item.manga.toLowerCase())))]);
+        sortedItem = item.sort((a, b) => (a.favorite < b.favorite ? 1 : -1));
       }
+      setItem([...sortedItem]);
     }
-    // check if favorite button is selected
     if (whichSort === 'favorite') {
-      // toggle favorite sort
       setIsFavoriteSelected(!isFavoriteSelected);
       if (!isFavoriteSelected) {
-        // sort by favorite first
-        setItem([...item.sort((a, b) => (a.favorite < b.favorite ? 1 : -1))]);
-      } else {
-        // sort by alphabet
-        setItem([...item.sort((a, b) => (a.favorite > b.favorite ? 1 : -1))]);
+        sortedItem = item.sort((a, b) => (a.favorite < b.favorite ? 1 : -1));
+      } else if (isFavoriteSelected) {
+        sortedItem = item.sort((a, b) => (a.favorite > b.favorite ? 1 : -1));
       }
+      setItem([...sortedItem]);
     }
   };
 
