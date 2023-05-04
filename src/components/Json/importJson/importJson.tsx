@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { Manga } from '../../todolist/todolist';
+import { Manga } from '../../MangaList/mangaList';
 import './importJson.css';
 
 type Props = {
