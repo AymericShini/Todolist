@@ -1,5 +1,5 @@
 import "./App.css";
-import TodoList from "./components/todolist/todolist";
+import TodoList from "./components/MangaList/mangaList";
 import { useEffect, useState } from "react";
 
 function App() {
@@ -14,7 +14,7 @@ function App() {
 
   useEffect(() => {
     document.body.className = theme;
-    }, [theme]);
+  }, [theme]);
 
   return (
     <div className="app">
@@ -26,7 +26,7 @@ function App() {
       </div>
       <TodoList />
     </div>
-    
+
   )
 }
 

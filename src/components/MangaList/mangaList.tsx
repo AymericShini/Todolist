@@ -1,99 +1,55 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import './todolist.css';
-import ImportJson from '../json/importJson/importJson';
-import ExportToJson from '../json/exportJson/exportJson';
+import './mangaList.css';
+import ImportJson from '../Json/importJson/importJson';
+import ExportToJson from '../Json/exportJson/exportJson';
 import SortAlphaDown from '../../../public/img/sortAlphaDown';
 import SortAlphaUp from '../../../public/img/sortAlphaUp';
-import { useDebounce } from '../../shared/hooks/useDebounce';
-
+import { Manga, EditManga } from '../../shared/types/manga';
 import { Props as MessageProps, AlertMessage } from '../Alert';
 
-// const regexIsUrlRegex = /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\$/;
-// const regexIsEmpty = /^[^\s]+$/;
 const regexIsNumber = /^[0-9]+$/;
-// const regexMangaName = /^[a-zA-Z0-9]+(?:\s[a-zA-Z]+)*$/;
-
-export interface Manga {
-  url: string;
-  manga: string;
-  chapitre: string;
-  favorite: boolean;
-  notifications: boolean;
-}
-
-interface EditManga {
-  url: string;
-  manga: string;
-  chapitre: string;
-  index: number;
-}
 
 const TodoList: React.FC = () => {
   const [item, setItem] = useState<Manga[]>([]);
-  const [itemEnCours, setItemEnCours] = useState<Manga>({ url: '', manga: '', chapitre: '', favorite: false, notifications: false });
-  const [editEnCours, setEditEnCours] = useState<EditManga>({ index: -1, manga: '', url: '', chapitre: '' });
+  const [itemEnCours, setItemEnCours] = useState<Manga>({ url: '', name: '', chapitre: '', favorite: false, notifications: false });
+  const [editEnCours, setEditEnCours] = useState<EditManga>({ index: -1, name: '', url: '', chapitre: '' });
   const [noList, setNoList] = useState<boolean>(true);
   const [sortOrder, setSortOrder] = useState<boolean>(false);
   const [searched, setSearched] = useState<Manga[]>([]);
   const [searching, setSearching] = useState<string>('');
   const [alert, setAlert] = useState<MessageProps>({ type: '', message: '' });
-  const [mangaData, setmangaData] = useState([]);
-  const [showSuggestions, setShowSuggestions] = useState(true);
   const [isFavoriteSelected, setIsFavoriteSelected] = useState(false);
 
-  const debouncedAlert = useDebounce(alert, 4000);
-
+  // Save item to session storage
+  // Save item to local storage
   useEffect(() => {
     if (item.length > 0) {
-      // Save item to session storage
       try {
         sessionStorage.setItem('item', JSON.stringify(item));
       } catch (error) {
         console.error(error);
       }
-      // Save item to local storage
       try {
         window.localStorage.setItem('item', JSON.stringify(item));
       } catch (error) {
         console.error(error);
       }
     }
-  }, [item]);
+    if (searching.length > 0) {
+      searchingElement();
+    }
+  }, [searching, item]);
 
+  // Get the item from sessionStorage or localStorage
+  // Set the item in the state
   useEffect(() => {
     try {
-      // Get the item from sessionStorage or localStorage
       const item = JSON.parse(window.sessionStorage.item || window.localStorage.item);
-      // Set the item in the state
       setItem(item);
     } catch (error) {
       console.error(error);
     }
   }, []);
-
-  // Clear alert after 5000ms
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setAlert({ type: '', message: '' });
-    }, 5000);
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [debouncedAlert]);
-
-  const getData = (text: string) => {
-    // setItemEnCours({ ...itemEnCours, manga: text });
-    // if (itemEnCours.manga.length > 2) {
-    //   const getData = setTimeout(() => {
-    //     axios.get(`https://api.jikan.moe/v4/manga?q=${text}&order_by=popularity&sort=asc&limit=5`).then(response => {
-    //       setmangaData(response.data.data);
-    //     });
-    //   }, 1500);
-    //   return () => clearTimeout(getData);
-    // }
-  };
 
   const keyPressInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -102,11 +58,11 @@ const TodoList: React.FC = () => {
   };
 
   // Check if the manga is already in the list
+  // If the list is not empty
+  // Check if the manga is already in the list
   const isDuplicate = () => {
-    // If the list is not empty
     if (item.length > 0) {
-      // Check if the manga is already in the list
-      let duplicate = item.some(e => e.manga.toLowerCase() === itemEnCours.manga.toLowerCase());
+      let duplicate = item.some(e => e.name.toLowerCase() === itemEnCours.name.toLowerCase());
       return duplicate;
     } else {
       return false;
@@ -114,25 +70,23 @@ const TodoList: React.FC = () => {
   };
 
   // Function to add a manga to the list
+  // Check if the chapter field is empty
+  // If so, display an error message
+  // Check if the manga already exists in the list
+  // If so, display a warning message
+  // If not, add the manga to the list
+  // Reset the input fields
   const addElement = () => {
-    // Check if the chapter field is empty
     if (!regexIsNumber.test(itemEnCours.chapitre.trim())) {
-      // If so, display an error message
       setAlert({ type: 'error', message: 'Il manque le chapitre' });
       return;
     }
-    // Check if the manga already exists in the list
     if (isDuplicate()) {
-      // If so, display a warning message
-      setAlert({
-        type: 'warning',
-        message: 'Ce manga existe déjà dans ta liste',
-      });
+      setAlert({ type: 'warning', message: 'Ce manga existe déjà dans ta liste' });
     } else {
-      // If not, add the manga to the list
       setItem([
         {
-          manga: itemEnCours.manga,
+          name: itemEnCours.name,
           url: itemEnCours.url,
           chapitre: itemEnCours.chapitre,
           favorite: false,
@@ -140,34 +94,33 @@ const TodoList: React.FC = () => {
         },
         ...item,
       ]);
-      // Reset the input fields
-      setItemEnCours({ url: '', manga: '', chapitre: '', favorite: false, notifications: false });
+      setItemEnCours({ url: '', name: '', chapitre: '', favorite: false, notifications: false });
     }
   };
 
+  // Clone the current items array
+  // Update the item at the given ID
+  // Keep the existing data
+  // Replace the data with the updated data
+  // Update the items array
+  // Reset the edit state
   const updateElement = (id: number, edit: any) => {
-    // Clone the current items array
     const updatedText = [...item];
-    // Update the item at the given ID
     updatedText[id] = {
-      // Keep the existing data
       ...updatedText[id],
-      // Replace the data with the updated data
       url: edit.url,
-      manga: edit.manga,
+      name: edit.name,
       chapitre: edit.chapitre,
     };
-    // Update the items array
     setItem(updatedText);
-    // Reset the edit state
-    setEditEnCours({ index: -1, manga: '', chapitre: '', url: '' });
+    setEditEnCours({ index: -1, name: '', chapitre: '', url: '' });
   };
 
+  // Set the current manga to edit
   const startEditElement = (manga: Manga, key: number) => {
-    // Set the current manga to edit
     setEditEnCours({
       index: key,
-      manga: manga.manga,
+      name: manga.name,
       chapitre: manga.chapitre,
       url: manga.url,
     });
@@ -188,7 +141,7 @@ const TodoList: React.FC = () => {
     if (whichSort === 'alphabetical') {
       sortedItem = item.sort((item, tempItem) => {
         setSortOrder(!sortOrder);
-        return sortOrder ? item.manga.toLowerCase().localeCompare(tempItem.manga.toLowerCase()) : tempItem.manga.toLowerCase().localeCompare(item.manga.toLowerCase());
+        return sortOrder ? item.name.toLowerCase().localeCompare(tempItem.name.toLowerCase()) : tempItem.name.toLowerCase().localeCompare(item.name.toLowerCase());
       });
       if (isFavoriteSelected) {
         sortedItem = item.sort((a, b) => (a.favorite < b.favorite ? 1 : -1));
@@ -218,36 +171,22 @@ const TodoList: React.FC = () => {
     setItem(notifications);
   };
 
+  // convert the string to lowercase
+  // filter the item list to return only the elements that contain the search string
+  // update the searched state with the filtered list
+  // if the filtered list is empty, display an info alert
   const searchingElement = () => {
-    // convert the string to lowercase
     const insensitiveSearching = searching.toLowerCase();
-    // filter the item list to return only the elements that contain the search string
     const searchedItem = item.filter(entry => Object.values(entry).some(value => typeof value === 'string' && value.toLowerCase().includes(insensitiveSearching)));
-    // update the searched state with the filtered list
     setSearched(searchedItem);
     if (searchedItem.length === 0) {
-      // if the filtered list is empty, display an info alert
       setAlert({ type: 'info', message: 'Aucun manga trouvé dans votre liste' });
     }
   };
 
-  useEffect(() => {
-    if (searching.length > 0) {
-      searchingElement();
-    }
-  }, [searching, item]);
-
   const deleteSearch = () => {
     setSearching('');
     setSearched([]);
-  };
-
-  const handleAddSuggestions = (choosenSuggestions: string) => {
-    setItemEnCours((prevState: any) => ({
-      ...prevState,
-      manga: choosenSuggestions,
-    }));
-    setmangaData([]);
   };
 
   const handleRedirectToManga = (manga: any) => {
@@ -279,19 +218,10 @@ const TodoList: React.FC = () => {
       <div className="blockInput">
         Manga*
         <div>
-          <input type="text" autoFocus placeholder="Manga" value={itemEnCours.manga} onChange={e => setItemEnCours({ ...itemEnCours, manga: e.target.value })} onKeyUp={e => keyPressInput(e)} />
-          {/* {mangaData.length > 0 &&
-            showSuggestions &&
-            mangaData.map((mangaData: any) => {
-              return (
-                <div onClick={() => handleAddSuggestions(mangaData.title)} className="anime-data-suggestions" onFocus={() => setShowSuggestions(true)} onBlur={() => setShowSuggestions(false)}>
-                  {mangaData.title}
-                </div>
-              );
-            })} */}
+          <input type="text" autoFocus placeholder="Manga" value={itemEnCours.name} onChange={e => setItemEnCours({ ...itemEnCours, name: e.target.value })} onKeyUp={e => keyPressInput(e)} />
         </div>
         Url*
-        <input type="url" placeholder="Url scan sans numéro" value={itemEnCours.url} onChange={e => handleUrl(e)} onKeyUp={e => keyPressInput(e)} />
+        <input type="url" placeholder="Url du scan sans le chapitre" value={itemEnCours.url} onChange={e => handleUrl(e)} onKeyUp={e => keyPressInput(e)} />
         Chapitre*
         <input type="number" placeholder="Chapitre" value={itemEnCours.chapitre} onChange={e => setItemEnCours({ ...itemEnCours, chapitre: e.target.value })} onKeyUp={e => keyPressInput(e)} />
         <button onClick={() => addElement()}>Ajouter un manga</button>
@@ -309,8 +239,7 @@ const TodoList: React.FC = () => {
       </div>
 
       <div className="blockInput">
-        <input type="text" placeholder="Search your manga" value={searching} onChange={e => setSearching(e.target.value)} />
-        {/* <button onClick={searchingElement}>Searching</button> */}
+        <input type="text" placeholder="Recherche de manga" value={searching} onChange={e => setSearching(e.target.value)} />
         {searching !== '' && <button onClick={deleteSearch}>&#x274C;</button>}
       </div>
 
@@ -325,11 +254,11 @@ const TodoList: React.FC = () => {
                   <>
                     <input
                       type="text"
-                      value={editEnCours.manga}
+                      value={editEnCours.name}
                       onChange={e =>
                         setEditEnCours({
                           ...editEnCours,
-                          manga: e.target.value,
+                          name: e.target.value,
                         })
                       }
                       onKeyUp={e => keyPressInput(e)}
@@ -352,7 +281,7 @@ const TodoList: React.FC = () => {
                 ) : (
                   <>
                     <p>
-                      {manga.manga} : scan {manga.chapitre}
+                      {manga.name} : scan {manga.chapitre}
                     </p>
                     <img onClick={() => handleRedirectToManga(manga)} className={'clipBoard'} src="/img/copyToClipBoard.png" />
                     <button onClick={() => startEditElement(manga, key)}>Éditer</button>
@@ -375,11 +304,11 @@ const TodoList: React.FC = () => {
                     <input
                       type="text"
                       placeholder="Manga"
-                      value={editEnCours.manga}
+                      value={editEnCours.name}
                       onChange={e =>
                         setEditEnCours({
                           ...editEnCours,
-                          manga: e.target.value,
+                          name: e.target.value,
                         })
                       }
                     />
@@ -400,7 +329,7 @@ const TodoList: React.FC = () => {
                 ) : (
                   <>
                     <p>
-                      {manga.manga} : scan {manga.chapitre}
+                      {manga.name} : scan {manga.chapitre}
                     </p>
                     <img onClick={() => handleRedirectToManga(manga)} className="clipBoard" src="/img/copyToClipBoard.png" />
                     <button onClick={() => startEditElement(manga, key)}>Éditer</button>
@@ -420,7 +349,6 @@ const TodoList: React.FC = () => {
       </ul>
 
       <ExportToJson list={item} />
-      <div>api pour les noms de manga = autocompletion // fonction de recherche // add dragable file //</div>
     </div>
   );
 };
